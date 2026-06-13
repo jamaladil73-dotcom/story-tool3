@@ -114,31 +114,43 @@ function rrPath(ctx,x,y,w,h,r){
 function rr(ctx,x,y,w,h,r,fill){rrPath(ctx,x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();}
 
 function drawLogo(ctx,cx,cy,scale,s,color){
-  // phone outline
   ctx.save();
   ctx.translate(cx*s,cy*s);
   ctx.scale(scale*s,scale*s);
-  ctx.strokeStyle=color; ctx.lineWidth=7;
+  ctx.strokeStyle=color; ctx.fillStyle='none';
   ctx.lineCap='round'; ctx.lineJoin='round';
-  // phone body
-  rrPath(ctx,-45,-60,90,140,16);
+
+  // Phone body (rounded rect outline)
+  ctx.lineWidth=8;
+  rrPath(ctx,-45,-65,90,150,20);
   ctx.stroke();
-  // speaker notch
+
+  // Speaker pill at top
+  ctx.lineWidth=9;
   ctx.beginPath();
-  ctx.moveTo(-15,-50); ctx.lineTo(15,-50);
+  ctx.moveTo(-15,-50);
+  ctx.lineTo(15,-50);
   ctx.stroke();
-  // charger plug + cable
+
+  // Cable: starts at bottom of phone, loops down and right, ends at plug on the side
   ctx.beginPath();
-  ctx.moveTo(45,-25); ctx.lineTo(70,-25); ctx.lineTo(70,-10); ctx.lineTo(58,-10);
-  ctx.lineTo(58,10);
+  ctx.moveTo(-15, 85);                 // bottom-left area of phone
+  ctx.bezierCurveTo(
+    -15, 115,    // pull down
+    50, 115,     // curve right
+    50, 90       // come back up
+  );
+  ctx.bezierCurveTo(
+    50, 70,      // continue up
+    35, 68,      // curve toward plug
+    35, 55       // end at plug bottom
+  );
   ctx.stroke();
-  rrPath(ctx,52,-32,12,10,2); ctx.stroke();
-  // cable curl down to phone bottom
-  ctx.beginPath();
-  ctx.moveTo(58,10);
-  ctx.bezierCurveTo(58,40,30,55,5,55);
-  ctx.lineTo(20,55);
+
+  // Plug head at end of cable
+  rrPath(ctx,24,40,22,16,4);
   ctx.stroke();
+
   ctx.restore();
 }
 
@@ -160,17 +172,17 @@ function drawStory(ctx,v,s,img){
   ctx.fillStyle=DK; ctx.fillRect(0,0,W*s,8*s);
 
   // ── LOGO + BRAND (top center) ──
-  drawLogo(ctx,W/2,90,1.0,s,DK);
+  drawLogo(ctx,W/2,120,1.0,s,DK);
 
   ctx.textAlign='center'; ctx.textBaseline='top';
   ctx.fillStyle=DK; ctx.font=`900 ${72*s}px Cairo,Arial`;
-  ctx.fillText('دوخة', W*s/2, 175*s);
+  ctx.fillText('دوخة', W*s/2, 260*s);
 
   ctx.fillStyle='#8b7d99'; ctx.font=`700 ${24*s}px Arial,sans-serif`;
-  ctx.fillText('MOBILE ACCESSORIES', W*s/2, 268*s);
+  ctx.fillText('MOBILE ACCESSORIES', W*s/2, 353*s);
 
   // ── PRODUCT IMAGE CARD ──
-  const imgX=70*s, imgY=340*s, imgW=(W-140)*s, imgH=780*s, imgR=32*s;
+  const imgX=70*s, imgY=420*s, imgW=(W-140)*s, imgH=700*s, imgR=32*s;
 
   ctx.shadowColor='rgba(61,53,72,0.18)'; ctx.shadowBlur=40*s; ctx.shadowOffsetY=14*s;
   rr(ctx,imgX,imgY,imgW,imgH,imgR,'#ffffff');

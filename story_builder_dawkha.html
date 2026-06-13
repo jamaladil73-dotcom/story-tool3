@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Story Builder — دوخة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:Cairo,sans-serif; background:#EFEAE3; color:#3D3548; direction:rtl; min-height:100vh; }
+  .app { max-width:500px; margin:0 auto; padding:16px; }
+  h1 { font-size:20px; font-weight:900; text-align:center; margin-bottom:16px; color:#3D3548; }
+  .preview-box { width:100%; aspect-ratio:9/16; border-radius:16px; overflow:hidden;
+    border:2px solid #d8d0c5; margin-bottom:16px; background:#EFEAE3;
+    box-shadow:0 4px 24px rgba(61,53,72,0.12); }
+  canvas { width:100%; height:100%; display:block; }
+  .card { background:#fff; border:1px solid #e5ded3; border-radius:16px; padding:16px; margin-bottom:12px; box-shadow:0 1px 6px rgba(61,53,72,0.04); }
+  .card-title { font-size:12px; color:#8b7d99; margin-bottom:12px; font-weight:700; letter-spacing:1px; }
+  .upload-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%;
+    padding:14px; border-radius:12px; border:2px dashed #3D3548; background:rgba(61,53,72,0.04);
+    color:#3D3548; font-size:15px; font-weight:700; font-family:Cairo,sans-serif; cursor:pointer; }
+  .upload-btn:active { background:rgba(61,53,72,0.1); }
+  .upload-btn.uploaded { border-color:#5a8a3a; background:rgba(90,138,58,0.08); color:#5a8a3a; }
+  .field { margin-bottom:10px; }
+  .field label { font-size:12px; color:#999; display:block; margin-bottom:5px; }
+  .field input { width:100%; padding:11px 13px; background:#fafafa; border:1px solid #e5ded3;
+    border-radius:10px; color:#3D3548; font-family:Cairo,sans-serif; font-size:14px; outline:none; }
+  .field input:focus { border-color:#3D3548; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .save-btn { width:100%; padding:15px; border-radius:14px; border:none;
+    background:linear-gradient(135deg,#3D3548,#5a4f6e); color:#EFEAE3;
+    font-size:16px; font-weight:900; font-family:Cairo,sans-serif; cursor:pointer;
+    box-shadow:0 4px 16px rgba(61,53,72,0.3); }
+  .save-btn:active { transform:scale(0.98); }
+  .save-btn:disabled { opacity:0.6; }
+  .status { text-align:center; font-size:13px; color:#5a8a3a; margin-top:8px; min-height:20px; font-weight:700; }
+  .ios-hint { background:#f5f0e8; border:1px solid #ddd0c0; border-radius:12px; padding:12px;
+    font-size:12px; color:#8b7d99; line-height:1.6; margin-top:8px; display:none; }
+  .ios-hint.show { display:block; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>📱 دوخة — Story Builder</h1>
+
+  <div class="preview-box" id="preview-box">
+    <canvas id="story-canvas"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📷 صورة المنتج</div>
+    <input type="file" accept="image/*" id="img-input" style="display:none;" onchange="handleImage(event)">
+    <button class="upload-btn" id="upload-btn" type="button" onclick="document.getElementById('img-input').click()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span id="file-label">اضغط لاختيار صورة</span>
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📦 المنتج</div>
+    <div class="field"><label>اسم المنتج</label><input type="text" id="prod-name" value="سماعة بلوتوث" oninput="update()" dir="rtl"></div>
+    <div class="field"><label>الوصف</label><input type="text" id="prod-sub" value="جودة صوت عالية وبطارية تدوم طويلاً" oninput="update()" dir="rtl"></div>
+    <div class="grid2">
+      <div class="field"><label>السعر</label><input type="text" id="prod-price" value="35,000" oninput="update()" dir="ltr"></div>
+      <div class="field"><label>العملة</label><input type="text" id="prod-currency" value="دينار عراقي" oninput="update()" dir="rtl"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">✅ المواصفات (3 حبات)</div>
+    <div class="field"><input type="text" id="feat1" value="بلوتوث 5.3" oninput="update()" dir="rtl"></div>
+    <div class="field"><input type="text" id="feat2" value="بطارية تدوم 30 ساعة" oninput="update()" dir="rtl"></div>
+    <div class="field"><input type="text" id="feat3" value="عازل للصوت ومقاوم للماء" oninput="update()" dir="rtl"></div>
+  </div>
+
+  <button class="save-btn" id="btn-dl" onclick="downloadPNG()">⬇️ حفظ الستوري</button>
+  <div class="status" id="status-msg"></div>
+  <div class="ios-hint" id="ios-hint">📱 <strong>للحفظ على آيفون:</strong><br>اضغط مطولاً على الصورة ← Save to Photos</div>
+</div>
+
+<script>
+const W=1080, H=1920;
+let currentImg=null;
+const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+
+function handleImage(e){
+  const file=e.target.files[0]; if(!file)return;
+  document.getElementById('upload-btn').classList.add('uploaded');
+  document.getElementById('file-label').textContent='✅ '+file.name;
+  const reader=new FileReader();
+  reader.onload=ev=>{ const img=new Image(); img.onload=()=>{currentImg=img;update();}; img.src=ev.target.result; };
+  reader.readAsDataURL(file);
+}
+
+function getVals(){
+  return {
+    name: document.getElementById('prod-name').value,
+    sub: document.getElementById('prod-sub').value,
+    price: document.getElementById('prod-price').value,
+    currency: document.getElementById('prod-currency').value,
+    f1: document.getElementById('feat1').value,
+    f2: document.getElementById('feat2').value,
+    f3: document.getElementById('feat3').value,
+  };
+}
+
+function rrPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+function rr(ctx,x,y,w,h,r,fill){rrPath(ctx,x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();}
+
+function drawLogo(ctx,cx,cy,scale,s,color){
+  // phone outline
+  ctx.save();
+  ctx.translate(cx*s,cy*s);
+  ctx.scale(scale*s,scale*s);
+  ctx.strokeStyle=color; ctx.lineWidth=7;
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  // phone body
+  rrPath(ctx,-45,-60,90,140,16);
+  ctx.stroke();
+  // speaker notch
+  ctx.beginPath();
+  ctx.moveTo(-15,-50); ctx.lineTo(15,-50);
+  ctx.stroke();
+  // charger plug + cable
+  ctx.beginPath();
+  ctx.moveTo(45,-25); ctx.lineTo(70,-25); ctx.lineTo(70,-10); ctx.lineTo(58,-10);
+  ctx.lineTo(58,10);
+  ctx.stroke();
+  rrPath(ctx,52,-32,12,10,2); ctx.stroke();
+  // cable curl down to phone bottom
+  ctx.beginPath();
+  ctx.moveTo(58,10);
+  ctx.bezierCurveTo(58,40,30,55,5,55);
+  ctx.lineTo(20,55);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawStory(ctx,v,s,img){
+  const DK='#3D3548', LT='#EFEAE3', GRN='#5a8a3a', GOLD='#C9A66B';
+
+  // ── BACKGROUND cream ──
+  ctx.fillStyle=LT; ctx.fillRect(0,0,W*s,H*s);
+
+  // Subtle texture circles
+  ctx.save();
+  ctx.globalAlpha=0.04;
+  ctx.fillStyle=DK;
+  ctx.beginPath(); ctx.arc(W*s*0.85,H*s*0.12,300*s,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(W*s*0.1,H*s*0.85,260*s,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // ── TOP BAR thin ──
+  ctx.fillStyle=DK; ctx.fillRect(0,0,W*s,8*s);
+
+  // ── LOGO + BRAND (top center) ──
+  drawLogo(ctx,W/2,90,1.0,s,DK);
+
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillStyle=DK; ctx.font=`900 ${72*s}px Cairo,Arial`;
+  ctx.fillText('دوخة', W*s/2, 175*s);
+
+  ctx.fillStyle='#8b7d99'; ctx.font=`700 ${24*s}px Arial,sans-serif`;
+  ctx.fillText('MOBILE ACCESSORIES', W*s/2, 268*s);
+
+  // ── PRODUCT IMAGE CARD ──
+  const imgX=70*s, imgY=340*s, imgW=(W-140)*s, imgH=780*s, imgR=32*s;
+
+  ctx.shadowColor='rgba(61,53,72,0.18)'; ctx.shadowBlur=40*s; ctx.shadowOffsetY=14*s;
+  rr(ctx,imgX,imgY,imgW,imgH,imgR,'#ffffff');
+  ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+
+  if(img){
+    ctx.save();
+    rrPath(ctx,imgX,imgY,imgW,imgH,imgR); ctx.clip();
+    const ar=img.width/img.height, car=imgW/imgH;
+    let dx,dy,dw,dh;
+    if(ar>car){dh=imgH;dw=dh*ar;dx=imgX-(dw-imgW)/2;dy=imgY;}
+    else{dw=imgW;dh=dw/ar;dx=imgX;dy=imgY-(dh-imgH)/2;}
+    ctx.drawImage(img,dx,dy,dw,dh);
+    ctx.restore();
+  } else {
+    ctx.fillStyle='#ccc'; ctx.font=`400 ${28*s}px Cairo,Arial`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('اضغط لاختيار صورة المنتج', W*s/2, imgY+imgH/2);
+  }
+
+  // Border accent gold
+  ctx.strokeStyle='rgba(201,166,107,0.5)'; ctx.lineWidth=2*s;
+  rrPath(ctx,imgX,imgY,imgW,imgH,imgR); ctx.stroke();
+
+  // ── PRODUCT NAME below image ──
+  const nameY=imgY+imgH+50*s;
+  ctx.fillStyle=DK; ctx.font=`900 ${58*s}px Cairo,Arial`;
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText(v.name, W*s/2, nameY);
+
+  ctx.fillStyle='#8b7d99'; ctx.font=`400 ${30*s}px Cairo,Arial`;
+  ctx.fillText(v.sub, W*s/2, nameY+76*s);
+
+  // ── DIVIDER with diamond ──
+  const divY=nameY+150*s;
+  ctx.strokeStyle='rgba(61,53,72,0.2)'; ctx.lineWidth=2*s;
+  ctx.beginPath(); ctx.moveTo(W*s/2-140*s,divY); ctx.lineTo(W*s/2-25*s,divY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W*s/2+25*s,divY); ctx.lineTo(W*s/2+140*s,divY); ctx.stroke();
+  // diamond
+  ctx.fillStyle=GOLD;
+  ctx.save(); ctx.translate(W*s/2,divY); ctx.rotate(Math.PI/4);
+  ctx.fillRect(-10*s,-10*s,20*s,20*s); ctx.restore();
+
+  // ── SPEC PILLS ──
+  const feats=[v.f1,v.f2,v.f3].filter(Boolean);
+  ctx.font=`700 ${25*s}px Cairo,Arial`;
+  const ph=58*s, pp=32*s, pg=16*s;
+  const pws=feats.map(f=>ctx.measureText(f).width+pp*2);
+  const tw=pws.reduce((a,b)=>a+b,0)+pg*(feats.length-1);
+  let px=(W*s-tw)/2;
+  const pillY=divY+40*s;
+  feats.forEach((f,i)=>{
+    rr(ctx,px,pillY,pws[i],ph,ph/2,'#fff');
+    ctx.strokeStyle='rgba(61,53,72,0.2)'; ctx.lineWidth=1.5*s;
+    rrPath(ctx,px,pillY,pws[i],ph,ph/2); ctx.stroke();
+    ctx.fillStyle=DK; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(f, px+pws[i]/2, pillY+ph/2);
+    px+=pws[i]+pg;
+  });
+
+  // ── PRICE CARD ──
+  const pY=pillY+ph+40*s;
+  const pG=ctx.createLinearGradient(60*s,pY,(W-60)*s,pY);
+  pG.addColorStop(0,DK); pG.addColorStop(1,'#564b6e');
+  ctx.shadowColor='rgba(61,53,72,0.3)'; ctx.shadowBlur=25*s;
+  rr(ctx,60*s,pY,(W-120)*s,220*s,28*s,pG);
+  ctx.shadowBlur=0;
+
+  // gold accent line
+  rr(ctx,60*s,pY,(W-120)*s,6*s,3*s,GOLD);
+
+  ctx.fillStyle='rgba(239,234,227,0.7)'; ctx.font=`400 ${26*s}px Cairo,Arial`;
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText('السعر الحصري',W*s/2,pY+24*s);
+
+  ctx.fillStyle=LT; ctx.font=`900 ${82*s}px Cairo,Arial`;
+  ctx.fillText(v.price,W*s/2,pY+58*s);
+
+  ctx.fillStyle=GOLD; ctx.font=`700 ${30*s}px Cairo,Arial`;
+  ctx.fillText(v.currency,W*s/2,pY+156*s);
+
+  // ── CTA ──
+  const ctaY=pY+250*s;
+  rr(ctx,80*s,ctaY,(W-160)*s,88*s,44*s,GRN);
+  ctx.fillStyle=LT; ctx.font=`900 ${32*s}px Cairo,Arial`;
+  ctx.textBaseline='middle';
+  ctx.fillText('📲 تواصل معنا الآن',W*s/2,ctaY+44*s);
+
+  ctx.fillStyle='rgba(61,53,72,0.5)'; ctx.font=`400 ${22*s}px Cairo,Arial`;
+  ctx.textBaseline='top';
+  ctx.fillText('راسلنا عبر الرسائل المباشرة',W*s/2,ctaY+108*s);
+
+  // ── BOTTOM BAR ──
+  ctx.fillStyle=DK; ctx.fillRect(0,H*s-8*s,W*s,8*s);
+}
+
+function update(){
+  const box=document.getElementById('preview-box');
+  const canvas=document.getElementById('story-canvas');
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const dw=box.clientWidth, dh=box.clientHeight;
+  canvas.width=dw*dpr; canvas.height=dh*dpr;
+  canvas.style.width=dw+'px'; canvas.style.height=dh+'px';
+  drawStory(canvas.getContext('2d'),getVals(),(dw*dpr)/W,currentImg);
+}
+
+function downloadPNG(){
+  const btn=document.getElementById('btn-dl'), msg=document.getElementById('status-msg'), hint=document.getElementById('ios-hint');
+  btn.textContent='⏳ جاري التصدير...'; btn.disabled=true;
+  const off=document.createElement('canvas'); off.width=W; off.height=H;
+  drawStory(off.getContext('2d'),getVals(),1,currentImg);
+  setTimeout(()=>{
+    const dataUrl=off.toDataURL('image/png');
+    if(isIOS){
+      const win=window.open();
+      win.document.write('<html><body style="margin:0;background:#000"><img src="'+dataUrl+'" style="width:100%;display:block"><p style="font-family:sans-serif;text-align:center;padding:16px;color:#8b7d99;font-size:15px">اضغط مطولاً على الصورة ← Save to Photos 📱</p></body></html>');
+      win.document.close(); hint.classList.add('show');
+    } else {
+      const a=document.createElement('a'); a.download='story_dawkha.png'; a.href=dataUrl; a.click();
+    }
+    btn.textContent='⬇️ حفظ الستوري'; btn.disabled=false;
+    msg.textContent='✅ تم!'; setTimeout(()=>{msg.textContent='';hint.classList.remove('show');},6000);
+  },300);
+}
+
+window.addEventListener('resize',update);
+window.addEventListener('load',()=>setTimeout(update,300));
+</script>
+</body>
+</html>
